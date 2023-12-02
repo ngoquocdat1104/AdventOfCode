@@ -1,0 +1,170 @@
+```{r include=F, message=FALSE}
+library(dplyr)
+library(CELRPackage)
+library(stringr)
+library(base)
+library(stringi)
+```
+
+```{r include=FALSE}
+input <- read_excel("data/day2.xlsx", col_types = c("skip", 
+    "text", "text"))
+```
+
+```{r}
+red <- 12
+green <- 13
+blue <- 14
+
+checking <- c()
+
+r <- 1
+g <- 1
+b <- 1
+
+while (r <= red) {
+  checking <- c(checking, paste0(as.character(r), "red"))
+  r <- r + 1
+}
+
+while (g <= green) {
+  checking <- c(checking, paste0(as.character(g), "green"))
+  g <- g + 1
+}
+
+while (b <= blue) {
+  checking <- c(checking, paste0(as.character(b), "blue"))
+  b <- b + 1
+  
+}
+
+checking 
+```
+
+# Part 1
+```{r}
+p1 <- input %>% 
+  mutate(
+    Finding = str_replace_all(Output, " ", ""),
+    Finding = str_replace_all(Finding, ";", ",")
+  ) %>% 
+  mutate(
+    Cubes = str_count(Finding, ",") + 1
+  )
+
+into_col <- c()
+i <- 1
+while (i <= max(p1$Cubes)) {
+  into_col <- c(into_col, paste0("Set", as.character(i)))
+  i <- i + 1
+}
+
+p1_set <- separate(
+  data = p1,
+  col = Finding,
+  sep = ",",
+  into = into_col
+)
+
+p1_check <- p1_set %>% 
+  select(-c(Output, Cubes)) %>% 
+  pivot_longer(
+    !ID,
+    names_to = "Set",
+    values_to = "Cube",
+    values_drop_na = T
+  ) %>% 
+  mutate(
+    Check = case_when(
+      Cube %in% checking ~ T,
+      T ~ F
+    )
+  ) %>% 
+  distinct(ID, Check) %>%
+  group_by(ID) %>% 
+  summarise(
+    Rows = n(), .groups = "drop"
+  )
+
+p1_check %>% 
+  filter(Rows == 1) %>% 
+  mutate(
+    ID = as.numeric(ID)
+  ) %>% 
+  summarise(
+    Result = sum(ID)
+  )
+
+```
+
+
+```{r}
+p2 <- input %>% 
+  mutate(
+    Finding = str_replace_all(Output, " ", ""),
+    Finding = str_replace_all(Finding, ";", ",")
+  ) %>% 
+  mutate(
+    Cubes = str_count(Finding, ",") + 1
+  )
+
+into_col <- c()
+i <- 1
+while (i <= max(p2$Cubes)) {
+  into_col <- c(into_col, paste0("Set", as.character(i)))
+  i <- i + 1
+}
+
+p2_set <- separate(
+  data = p2,
+  col = Finding,
+  sep = ",",
+  into = into_col
+)
+
+p2_check <- p2_set %>% 
+  select(-c(Output, Cubes)) %>% 
+  pivot_longer(
+    !ID,
+    names_to = "Set",
+    values_to = "Cube",
+    values_drop_na = T
+  )
+
+p2_check %>% 
+  select(-Set) %>% 
+  mutate(
+    Green = case_when(
+      grepl("green", Cube) ~ as.character(parse_number(Cube)),
+      T ~ "0"
+    ),
+    Red = case_when(
+      grepl("red", Cube) ~ as.character(parse_number(Cube)),
+      T ~ "0"
+    ),
+    Blue = case_when(
+      grepl("blue", Cube) ~ as.character(parse_number(Cube)),
+      T ~ "0"
+    )
+  ) %>% 
+  group_by(ID) %>%
+  summarise(
+    Green = max(as.numeric(Green)),
+    Red = max(as.numeric(Red)),
+    Blue = max(as.numeric(Blue)),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Output = Green * Red * Blue
+  ) %>% 
+  summarise(sum(Output))
+```
+
+
+
+
+
+
+
+
+
