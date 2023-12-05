@@ -1,0 +1,81 @@
+```{r include=F, message=FALSE}
+library(tidyverse)
+library(CELRPackage)
+library(stringr)
+library(base)
+library(stringi)
+```
+
+
+```{r}
+input <- read_excel("data/day4.xlsx") %>% 
+  select(-Raw)
+```
+
+# Part 1
+
+```{r}
+point <- 0
+input$Point <- NA
+input$Match <- NA
+input$OG <- 1
+input$Copy <- 0
+input$Real <- 0
+
+
+
+for (i in 1:nrow(input)) {
+  
+  string <- input$Win[i]
+  to_check <- input$Set[i]
+  match <- 0
+  
+  while (string != "") {
+    
+    checking <- as.character(parse_number(string))
+    
+    pattern <- paste0("\\b", checking, "\\b")
+    
+   
+    
+    if (grepl(pattern, to_check) == T) {
+      match <- match + 1
+    }
+
+    
+    string <- str_trim(sub(checking, replacement = "" , x = string), side = "left")
+    
+  }
+  
+   if (match > 0) {
+     
+    point <- point + 2^(match - 1)
+    input$Real[i] <- input$OG[i] + input$Copy[i]
+    
+    for (j in seq(i + 1, length.out = match)) {
+      if (j <= nrow(input)) {
+        input$Copy[j] <- input$Copy[j] + input$Real[i] #row i still fixed, only j is vary
+      }
+    }
+  } else {
+    point <- point
+    input$Real[i] <- input$OG[i] + input$Copy[i]
+  }
+  
+  input$Point[i] <- point
+  input$Match[i] <- match
+  
+}
+
+
+```
+
+# Part 2
+```{r}
+sum(input$Real)
+```
+
+
+
+
+

@@ -1,0 +1,27 @@
+```{r include=F, message=FALSE}
+library(tidyverse)
+library(CELRPackage)
+library(stringr)
+library(base)
+library(stringi)
+```
+
+```{r include=FALSE}
+input <- read_excel("data/day3.xlsx", col_names = FALSE) %>% 
+  rename(
+    Raw = "...1"
+  ) %>% 
+  mutate(
+    Nchar = nchar(Raw)
+  )
+```
+
+```{r}
+input %>% 
+  separate(
+    col = Raw,
+    sep = "",
+    into = paste(c(1:140))
+  )
+```
+
