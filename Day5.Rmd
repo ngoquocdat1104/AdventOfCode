@@ -1,0 +1,100 @@
+```{r include=F, message=FALSE}
+library(tidyverse)
+library(CELRPackage)
+library(stringr)
+library(base)
+library(stringi)
+```
+
+```{r}
+input <- ReadExcelFiles("data/day5 - Copy.xlsx")
+# input <- ReadExcelFiles("data/day5.xlsx")
+```
+
+```{r}
+input
+```
+```{r}
+seed <- input$seeds
+seed_p2 <- input$seeds
+input <- input[-1]
+```
+
+```{r}
+for (i in 1:length(input)) {
+  input[[i]] <- input[[i]] %>%
+    select(-Raw) %>%
+    mutate_if(is.character, as.numeric) %>% 
+    mutate(
+      DestMax = Dest + Range - 1,
+      SourceMax = Source + Range -1
+    ) %>% 
+    relocate(
+      DestMax, .after = Dest
+    ) %>% 
+    relocate(
+      SourceMax, .after = Source
+    )
+
+}
+```
+
+```{r}
+for (i in 1:length(input)) {
+  col_name <- tail(str_split(names(input[i]), "-")[[1]], 1)
+  
+  seed[[col_name]] <- sapply(seed[[if (i == 1) "Seed" else tail(names(seed), 1)]], function(source_value) {
+
+    if (T %in% (source_value >= input[[i]]$Source & source_value <= input[[i]]$SourceMax)) {
+      model <- input[[i]] %>% 
+      filter(
+        source_value >= Source & source_value <= SourceMax
+      ) 
+    
+      return <- source_value - model$Source[1] + model$Dest[1]
+    } else{
+      return <- source_value
+    }
+    
+    
+    return(return)
+  })
+}
+```
+
+# Part 2
+```{r}
+row_even <- seq_len(nrow(seed_p2)) %% 2  
+
+seed_range_1st <- seed_p2[row_even == 1, "Seed"]
+
+seed_range_2nd <- seed_p2[row_even == 0, "Seed"]
+
+seed_range <- tibble(
+  Seed = seed_range_1st,
+  Range = seed_range_2nd
+) %>% 
+  mutate(
+    SeedMax = Seed + Range - 1
+  ) %>% 
+    relocate(Range, .before = Seed) %>% 
+    relocate(SeedMax, .before = Range)
+ 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

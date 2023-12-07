@@ -1,0 +1,300 @@
+```{r include=F, message=FALSE}
+library(tidyverse)
+library(CELRPackage)
+library(stringr)
+library(base)
+library(stringi)
+
+```
+
+```{r}
+input <- read_excel("data/day7.xlsx", col_names = FALSE) %>% 
+  rename(Raw = '...1')
+```
+```{r}
+input <- input %>% 
+  separate(
+    col = Raw,
+    into = c("Hand", "Bid"),
+    sep = " ",
+    remove = F
+  ) %>% 
+  relocate(Bid, .before = Hand) %>% 
+  mutate(
+    Hand = sub(" ", "", Hand),
+    Bid = sub(" ", "", Bid)
+  )
+```
+
+```{r}
+input <- input %>% 
+  separate(
+    col = Hand,
+    into = c("1", "4"),
+    sep = 1,
+    remove = F
+  ) %>% 
+  separate(
+    col = "4",
+    into = c("2", "3"),
+    sep = 1
+  ) %>% 
+  separate(
+    col = "3",
+    into = c("3", "4"),
+    sep = 1
+  ) %>% 
+  separate(
+    col = "4",
+    into = c("4", "5"),
+    sep = 1
+  )
+```
+
+```{r}
+pat <- c(
+  "T" = "10",
+  "J" = "11",
+  "Q" = "12",
+  "K" = "13",
+  "A" = "14"
+)
+```
+
+
+```{r}
+for (i in 1:5){
+  input[[as.character(i)]] <- str_replace_all(input[[as.character(i)]], pattern = pat)
+}
+
+```
+
+```{r}
+input <- input %>% 
+  mutate(
+    across(
+      contains(c("1", "2", "3", "4", "5")), ~as.numeric(.)
+    )
+  )
+```
+
+```{r}
+unique(c(1,4,2,2,3))
+```
+
+
+
+# Part 1
+
+use table() to create a frequency table at each row and apply any() to check
+
+```{r}
+input$Type <- NA
+input$TypeSort <- 0
+for (i in 1:nrow(input)) {
+  col1 <- input[["1"]][i]
+  col2 <- input[["2"]][i]
+  col3 <- input[["3"]][i]
+  col4 <- input[["4"]][i]
+  col5 <- input[["5"]][i]
+  
+  check_condition <- table(c(col1, col2, col3, col4, col5))
+  
+  if (any(check_condition == 5)){
+    input$Type[i] <- "5 Kind"
+    input$TypeSort[i] <- 10
+  } else if(any(check_condition == 4)) {
+    input$Type[i] <- "4 Kind"
+    input$TypeSort[i]  <- 9
+  } else if(any(check_condition == 3) & any(check_condition == 2)) {
+    input$Type[i] <- "Full House"
+    input$TypeSort[i]  <- 8
+  } else if(any(check_condition == 3)) {
+    input$Type[i] <- "3 Kind"
+    input$TypeSort[i]  <- 7
+  } else if(any(table(check_condition) == 2)) {
+    input$Type[i] <- "2 Pair"
+    input$TypeSort[i]  <- 6
+  } else if(any(check_condition == 2)) {
+    input$Type[i] <- "1 Pair"
+    input$TypeSort[i]  <- 5
+  } else {
+    input$Type[i] <- "High Card"
+    input$TypeSort[i] <- 4
+  }
+  
+  
+  
+}
+```
+
+```{r}
+input <- input %>% 
+  arrange(
+    desc(TypeSort),
+    desc(`1`),
+    desc(`2`),
+    desc(`3`),
+    desc(`4`),
+    desc(`5`)
+  )
+```
+
+```{r}
+input$Score <- 0
+for (i in 1:nrow(input)){
+  input$Score[i] <- 1000 - i +1
+}
+```
+
+```{r}
+input$Bid <- as.numeric(input$Bid)
+input$Total <- input$Bid * input$Score
+
+sum(input$Total)
+```
+
+
+# Part 2
+Dynamic Joker but comparing standalone, Joker = 1
+
+```{r}
+p2 <- input %>% select(Raw:`5`)
+```
+
+```{r}
+length(names(table(c(11,2,2,3,3))))
+names(table(c(11,11,2,2,2)))
+
+table(c(11,11,11,2,2))
+
+```
+```{r}
+p2 <- p2 %>% 
+  mutate(
+    across(
+      contains(c("1", "2", "3", "4", "5")), ~if_else(. == 11, 1, .)
+    )
+  )
+```
+
+
+```{r}
+p2$Type <- NA
+p2$TypeSort <- 0
+for (i in 1:nrow(input)) {
+  col1 <- p2[["1"]][i]
+  col2 <- p2[["2"]][i]
+  col3 <- p2[["3"]][i]
+  col4 <- p2[["4"]][i]
+  col5 <- p2[["5"]][i]
+  
+  check_condition <- table(c(col1, col2, col3, col4, col5))
+  
+  if (any(check_condition == 5)){
+    p2$Type[i] <- "5 Kind"
+    p2$TypeSort[i] <- 10
+    
+  } else if(any(check_condition == 4)) {
+    if (any(names(check_condition) == "1")){
+      p2$Type[i] <- "5 Kind"
+      p2$TypeSort[i]  <- 10
+    } else {
+      p2$Type[i] <- "4 Kind"
+      p2$TypeSort[i]  <- 9
+    }
+    
+  } else if(any(check_condition == 3) & any(check_condition == 2)) {
+    if (any(names(check_condition) == "1")) {
+      p2$Type[i] <- "5 Kind"
+      p2$TypeSort[i]  <- 10
+    } else {
+      p2$Type[i] <- "Full House"
+      p2$TypeSort[i]  <- 8
+    }
+    
+  } else if(any(check_condition == 3)) {
+    
+    if (any(names(check_condition) == "1")) {
+      p2$Type[i] <- "4 Kind"
+      p2$TypeSort[i]  <- 9
+    } else {
+      p2$Type[i] <- "3 Kind"
+      p2$TypeSort[i]  <- 7
+    }
+    
+  } else if(any(table(check_condition) == 2)) {
+    
+    
+    if (any(names(check_condition) == "1") & check_condition["1"] == 2) {
+      p2$Type[i] <- "4 Kind"
+      p2$TypeSort[i]  <- 9
+    } else if(any(names(check_condition) == "1" & check_condition["1"] == 1)) {
+      p2$Type[i] <- "Full House"
+      p2$TypeSort[i]  <- 8
+    } else {
+      p2$Type[i] <- "2 Pair"
+      p2$TypeSort[i]  <- 6
+    }
+    
+    
+  } else if(any(check_condition == 2)) {
+    if (any(names(check_condition) == "1")) {
+      p2$Type[i] <- "3 Kind"
+      p2$TypeSort[i]  <- 7
+    } else {
+      p2$Type[i] <- "1 Pair"
+      p2$TypeSort[i]  <- 5
+    }
+    
+  } else {
+    if (any(names(check_condition) == "1")) {
+      p2$Type[i] <- "1 Pair"
+      p2$TypeSort[i]  <- 5
+    } else {
+      p2$Type[i] <- "High Card"
+        p2$TypeSort[i] <- 4
+    }
+    
+  }
+  
+  
+  
+}
+```
+
+```{r}
+p2 <- p2 %>% 
+  arrange(
+    desc(TypeSort),
+    desc(`1`),
+    desc(`2`),
+    desc(`3`),
+    desc(`4`),
+    desc(`5`)
+  )
+```
+
+```{r}
+p2$Score <- 0
+for (i in 1:nrow(p2)){
+  p2$Score[i] <- 1000 - i +1
+}
+```
+
+```{r}
+
+p2$Total <- p2$Bid * p2$Score
+
+sum(p2$Total)
+```
+
+
+
+
+
+
+
+
+
+
