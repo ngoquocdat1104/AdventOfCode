@@ -1,0 +1,80 @@
+```{r include=F, message=FALSE}
+library(tidyverse)
+library(CELRPackage)
+library(stringr)
+library(base)
+library(stringi)
+
+```
+
+```{r}
+raw_data <- read_excel("data/day9.xlsx")
+test <- read_excel("data/day9-test.xlsx")
+```
+
+# Part 1
+```{r}
+raw_data$Forecast <- sapply(raw_data$Raw, function(x) {
+
+  testing <- x %>% str_split_1(pattern = " ") %>% as.numeric()
+  finding <- c()
+  current_list <- list(testing)
+  repeat {
+    finding <- diff(testing)
+    
+    testing <- finding
+    current_list <- c(current_list, list(finding))
+    
+    if (all(finding == 0)) {
+       
+      result <- 0
+      for (i in length(current_list):1) {
+        last_value <- current_list[[i]][length(current_list[[i]])]
+        result <- result + last_value
+        
+      }
+      return(result)
+      break
+    }
+
+  }
+}
+)
+
+sum(raw_data$Forecast)
+```
+# Part 2
+
+```{r}
+raw_data$History <- sapply(raw_data$Raw, function(x) {
+  testing <- x %>% str_split_1(pattern = " ") %>% as.numeric()
+    finding <- c()
+    current_list <- list(testing)
+    repeat {
+      finding <- diff(testing)
+      
+      testing <- finding
+      current_list <- c(current_list, list(finding))
+      
+      if (all(finding == 0)) {
+         
+        result <- 0
+        for (i in length(current_list):1) {
+          first_value <- current_list[[i]][1]
+          result <- first_value - result
+          
+        }
+        return(result)
+        break
+      }
+
+    }
+  }
+)
+sum(raw_data$History)
+```
+
+
+
+
+
