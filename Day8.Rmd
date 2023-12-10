@@ -1,0 +1,181 @@
+```{r include=F, message=FALSE}
+library(tidyverse)
+library(CELRPackage)
+library(stringr)
+library(base)
+library(stringi)
+library(numbers)
+```
+
+```{r}
+input <- read_excel("data/day8.xlsx", col_names = F) %>% 
+  rename(Raw = "...1")
+```
+
+```{r}
+instruction <- input[1, 1]
+node <- input[-c(1,2) ,1]
+```
+
+```{r}
+clean_node <- node %>% 
+  separate(
+    col = Raw,
+    into = c("Current", "Element"),
+    sep = " = ",
+    remove = F
+  ) %>% 
+  separate(
+    col = Element,
+    into = c("Left", "Right"),
+    sep = ", ",
+    remove = F
+  ) %>% 
+  mutate(
+    Left = sub(x = Left, pattern = "\\(", replacement = ""),
+    Right = sub(x = Right, pattern = "\\)", replacement = "")
+  ) %>% 
+  relocate(
+    Element, .before = Current
+  )
+```
+
+```{r}
+input_vector <- unlist(strsplit(instruction$Raw[1], split = ""))
+
+input_vector[1]
+
+
+```
+
+```{r}
+counting <- 1
+starting <- "AAA"
+next_move <- NA_character_
+original_length <- length(input_vector)
+for (i in seq_along(input_vector)) {
+  extract_char <- input_vector[i]
+  
+  if (!is.na(extract_char)) {
+    if (extract_char == "L") {
+      next_move <- clean_node$Left[clean_node$Current == starting]
+    } else if (extract_char == "R") {
+      next_move <- clean_node$Right[clean_node$Current == starting]
+    }
+  }
+  
+  # print(paste0("Step ", counting, ": Extract char - ", extract_char, ", Next move - ", next_move))
+
+  if (next_move == "ZZZ" & !is.na(next_move)){
+    break
+  }
+  
+  
+  starting <- next_move
+  counting <- counting + 1
+  
+  if (counting == length(input_vector)) {
+    input_vector <- rep(input_vector, length.out = original_length*length(input_vector))
+  }
+}
+```
+
+# Part 2
+```{r}
+a_vector <- clean_node %>% 
+  mutate(
+    LastChar = substr(Current, 3, 3)
+  ) %>% 
+  filter(LastChar == "A") %>% 
+  select(Current)
+
+a_vector <- c(a_vector$Current)
+
+```
+
+```{r}
+z <- c()
+for (a in seq_along(a_vector)) {
+  counting <- 1
+  starting <- a_vector[a]
+  next_move <- NA_character_
+  original_length <- length(input_vector)
+  for (i in seq_along(input_vector)) {
+    extract_char <- input_vector[i]
+    
+    if (!is.na(extract_char)) {
+      if (extract_char == "L") {
+        next_move <- clean_node$Left[clean_node$Current == starting]
+      } else if (extract_char == "R") {
+        next_move <- clean_node$Right[clean_node$Current == starting]
+      }
+    }
+    
+    print(paste0("Step ", counting))
+  
+    if (endsWith(next_move, "Z") & !is.na(next_move)){
+      z <- c(z, counting)
+      break
+    }
+    
+    
+    starting <- next_move
+    counting <- counting + 1
+    
+    if (counting == length(input_vector)) {
+      input_vector <- rep(input_vector, length.out = original_length*length(input_vector))
+    }
+  }
+}
+```
+```{r}
+prime_factors <- function(n) {
+  i <- 2
+  factors <- c()
+  while (i <= n) {
+    if (n %% i == 0) {
+      factors <- c(factors, i)
+      n <- n / i
+    } else {
+      i <- i + 1
+    }
+  }
+  return(factors)
+}
+```
+
+```{r}
+all_factors <- lapply(z, prime_factors)
+
+result <- 1
+for (x in 1:length(unique(unlist(all_factors)))) {
+  lcm <- unique(unlist(all_factors))[x]
+  result <- result*lcm
+  print(result)
+}
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
