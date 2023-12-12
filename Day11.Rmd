@@ -1,0 +1,100 @@
+```{r include=F, message=FALSE}
+library(tidyverse)
+library(CELRPackage)
+library(stringr)
+library(base)
+library(stringi)
+library(utils)
+```
+
+```{r}
+# raw_data <- read_excel("data/day11-test.xlsx")
+raw_data <- read_excel("data/day11.xlsx")
+```
+
+```{r}
+clean <- raw_data %>% 
+  separate(
+    col = Raw,
+    into = paste0(1:nchar(raw_data$Raw[1])),
+    sep = "(?<=.)(?=.)"
+  )
+```
+
+
+
+```{r}
+clean$xAxis <- 1:nrow(clean)
+```
+
+- Twice bigger = space + 1 (including the og one)
+- 1M bigger = space + 999999
+
+# Part 1
+```{r}
+spacing <- 0
+clean$xAdjust <- clean$xAxis
+for (row in 1:nrow(clean)) {
+  row_data <- as.character(unlist(clean[row, 1:(ncol(clean)-2)]))
+  
+  if (all(row_data == ".")){
+    spacing <- spacing + 999999
+  } else {
+    clean$xAdjust[row] <- clean$xAdjust[row] + spacing 
+  }
+  
+}
+```
+
+```{r}
+col_spacing <- 0
+new_col <- names(clean)
+for (col in 1:(ncol(clean)-2)) {
+  if (all(clean[[col]] == ".")){
+    col_spacing <- col_spacing + 999999
+  } else {
+    new_col[col] <- as.character(as.numeric(names(clean)[col]) + col_spacing)
+  }
+}
+names(clean) <- new_col
+```
+
+
+
+```{r}
+galaxy_vector <- c()
+for (i in 1:nrow(clean)) {
+  for (j in 1:ncol(clean)) {
+    finding <- c()
+    if (grepl("#",clean[i, j]) == T){
+      finding <- c(clean$xAdjust[i], as.numeric(colnames(clean[i, j])))
+      galaxy_vector <- c(galaxy_vector, list(finding))
+    }
+  }
+}
+```
+
+```{r include=F}
+galaxy_vector
+unlist(combn(galaxy_vector, m = 2, simplify = F)[[36]])
+```
+
+
+```{r}
+galaxy_combi <- combn(galaxy_vector, m = 2, simplify = F)
+result <- 0
+for (i in 1:length(galaxy_combi)) {
+  locate <- unlist(galaxy_combi[[i]])
+  shortest <- abs(locate[1]-locate[3]) + abs(locate[2]-locate[4])
+  result <- result + shortest
+  
+}
+print(result)
+```
+
+
+
+
+
+
+
